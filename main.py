@@ -3,6 +3,10 @@ import os
 
 app = Flask(__name__)
 
+# Configuration for production
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
+app.config['PROPAGATE_EXCEPTIONS'] = True
+
 def merge_intervals(intervals):
     if not intervals:
         return []
@@ -31,9 +35,17 @@ def min_boats(intervals):
         max_boats = max(max_boats, current)
     return max_boats
 
-@app.route('/')
-def health_check():
-    return jsonify({'status': 'healthy', 'message': 'Sailing Club API is running'})
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({'error': 'Endpoint not found'}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({'error': 'Internal server error'}), 500
+
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({'error': 'Bad request'}), 400
 
 @app.route('/sailing-club', methods=['POST'])
 def sailing_club():
