@@ -31,23 +31,43 @@ def min_boats(intervals):
         max_boats = max(max_boats, current)
     return max_boats
 
+@app.route('/')
+def health_check():
+    return jsonify({'status': 'healthy', 'message': 'Sailing Club API is running'})
+
 @app.route('/sailing-club', methods=['POST'])
 def sailing_club():
-    data = request.get_json()
-    test_cases = data.get('testCases', [])
-    solutions = []
-    for test_case in test_cases:
-        id_ = test_case['id']
-        input_ = test_case['input']
-        merged = merge_intervals(input_)
-        min_boats_needed = min_boats(input_)
-        solution = {
-            'id': id_,
-            'sortedMergedSlots': merged,
-            'minBoatsNeeded': min_boats_needed
-        }
-        solutions.append(solution)
-    return jsonify({'solutions': solutions})
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Invalid JSON data'}), 400
+        
+        test_cases = data.get('testCases', [])
+        if not isinstance(test_cases, list):
+            return jsonify({'error': 'testCases must be a list'}), 400
+            
+        solutions = []
+        for test_case in test_cases:
+            if not isinstance(test_case, dict) or 'id' not in test_case or 'input' not in test_case:
+                return jsonify({'error': 'Invalid test case format'}), 400
+                
+            id_ = test_case['id']
+            input_ = test_case['input']
+            
+            if not isinstance(input_, list):
+                return jsonify({'error': 'input must be a list of intervals'}), 400
+                
+            merged = merge_intervals(input_)
+            min_boats_needed = min_boats(input_)
+            solution = {
+                'id': id_,
+                'sortedMergedSlots': merged,
+                'minBoatsNeeded': min_boats_needed
+            }
+            solutions.append(solution)
+        return jsonify({'solutions': solutions})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 4000))
