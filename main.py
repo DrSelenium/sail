@@ -10,9 +10,16 @@ app.config['PROPAGATE_EXCEPTIONS'] = True
 def merge_intervals(intervals):
     if not intervals:
         return []
-    intervals.sort(key=lambda x: x[0])
-    merged = [intervals[0]]
-    for current in intervals[1:]:
+    # Filter valid intervals
+    valid = []
+    for interval in intervals:
+        if isinstance(interval, list) and len(interval) == 2 and isinstance(interval[0], (int, float)) and isinstance(interval[1], (int, float)):
+            valid.append([int(interval[0]), int(interval[1])])
+    if not valid:
+        return []
+    valid.sort(key=lambda x: x[0])
+    merged = [valid[0]]
+    for current in valid[1:]:
         last = merged[-1]
         if current[0] <= last[1]:
             last[1] = max(last[1], current[1])
@@ -23,8 +30,15 @@ def merge_intervals(intervals):
 def min_boats(intervals):
     if not intervals:
         return 0
+    # Filter valid intervals
+    valid = []
+    for interval in intervals:
+        if isinstance(interval, list) and len(interval) == 2 and isinstance(interval[0], (int, float)) and isinstance(interval[1], (int, float)):
+            valid.append([int(interval[0]), int(interval[1])])
+    if not valid:
+        return 0
     events = []
-    for start, end in intervals:
+    for start, end in valid:
         events.append((start, 1))  # start
         events.append((end, -1))  # end
     events.sort()
@@ -66,16 +80,24 @@ def sailing_club():
             id_ = test_case['id']
             input_ = test_case['input']
             
-            if not isinstance(input_, list):
-                return jsonify({'error': 'input must be a list of intervals'}), 400
-                
-            merged = merge_intervals(input_)
-            min_boats_needed = min_boats(input_)
-            solution = {
-                'id': id_,
-                'sortedMergedSlots': merged,
-                'minBoatsNeeded': min_boats_needed
-            }
+            try:
+                if not isinstance(input_, list):
+                    raise ValueError('input must be a list of intervals')
+                    
+                merged = merge_intervals(input_)
+                min_boats_needed = min_boats(input_)
+                solution = {
+                    'id': id_,
+                    'sortedMergedSlots': merged,
+                    'minBoatsNeeded': min_boats_needed
+                }
+            except Exception as e:
+                # For invalid input, return empty solution
+                solution = {
+                    'id': id_,
+                    'sortedMergedSlots': [],
+                    'minBoatsNeeded': 0
+                }
             solutions.append(solution)
         return jsonify({'solutions': solutions})
     except Exception as e:
